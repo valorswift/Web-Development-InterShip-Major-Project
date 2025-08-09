@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Dashboard</title>
+  <link rel="stylesheet" href="../assets/style/dashboard.css">
+</head>
+<body>
+  <div class="container">
+    <aside class="sidebar">
+      <div class="logo">
+            <img src="https://cdn-icons-png.flaticon.com/512/3135/3135768.png" alt="Logo" />
+             <div class="logo-hover-options">
+                 <button onclick="goToProfile()">Profile</button>
+                <button onclick="logout()">Logout</button>
+             </div>
+        </div>
+
+
+      <h2>📚 Dashboard</h2>
+      <ul>
+        <li onclick="showHome()">🏠 Home</li>
+<li onclick="showRecent()">👨‍🎓 Recent</li>
+
+<!-- <li onclick="showStudent()">📊 Student</li> -->
+ <li onclick="showStudentStats()">📊 Student</li>
+
+<li onclick="showSettings()">⚙️ Settings</li>
+
+      </ul>
+    </aside>
+
+    <main class="main">
+      <div class="top-bar">
+        <input type="text" placeholder="🔍 Search students..." id="searchBar" />
+        <button onclick="createCard()">+ New Student</button>
+      </div>
+
+      <div class="cards" id="cardContainer">
+        <!-- Student cards will appear here -->
+      </div>
+
+      <!-- Student show -->
+      <div id="studentStats" style="display: none; padding: 20px;">
+  <h2>Student Summary</h2>
+  <div style="display: flex; gap: 20px; margin-top: 15px;">
+    <div class="stat-card">
+      <h3>Total Students</h3>
+      <p id="totalStudents">0</p>
+    </div>
+    <div class="stat-card">
+      <h3>Boys</h3>
+      <p id="totalBoys">0</p>
+    </div>
+    <div class="stat-card">
+      <h3>Girls</h3>
+      <p id="totalGirls">0</p>
+    </div>
+  </div>
+</div>
+
+  </div>
+</section>
+
+    </main>
+  </div>
+  <!-- Existing code -->
+  </div> <!-- this closes your <div class="container"> -->
+
+  <!-- ✅ Add the modal just below this line -->
+ <div id="cardModal" class="modal">
+  <div class="modal-content">
+    <h2>Create New Folder</h2>
+    <input type="text" id="folderNameInput" placeholder="Enter folder name" />
+    <textarea id="folderDescInput" placeholder="Enter description" rows="3"></textarea>
+    <div class="modal-actions">
+      <button onclick="submitFolder()">Create</button>
+      <button onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Your JS file should remain at the bottom -->
+  <script src="../assets/script/dashboard.js"></script>
+</body>
+
+
+  <!-- <script src="dashboard.js"></script> -->
+</body>
+</html>
