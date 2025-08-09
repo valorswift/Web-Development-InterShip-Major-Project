@@ -8,10 +8,10 @@ function showSignup() {
   document.getElementById("signupSection").classList.remove("hidden");
 }
 
-// Handle Signup
 async function handleSignup(event) {
   event.preventDefault();
   const inputs = event.target.querySelectorAll("input");
+  const fullname = inputs[0].value;   // First input is Full Name
   const email = inputs[1].value;
   const password = inputs[2].value;
 
@@ -19,7 +19,7 @@ async function handleSignup(event) {
     const response = await fetch("http://localhost:3000/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ fullname, email, password }) // Include fullname
     });
 
     const result = await response.json();
@@ -29,7 +29,6 @@ async function handleSignup(event) {
   }
 }
 
-// Handle Login
 async function handleLogin(event) {
   event.preventDefault();
   const inputs = event.target.querySelectorAll("input");
@@ -45,7 +44,11 @@ async function handleLogin(event) {
 
     const result = await response.json();
     if (result.success) {
-      showSuccess(result.message);
+      showSuccess(result.message); // shows success modal or message
+      localStorage.setItem("email", email);
+      setTimeout(() => {
+        window.location.href = "../pages/dashboard.html"; // 👈 Redirect after 1s
+      }, 1000);
     } else {
       alert(result.message);
     }
