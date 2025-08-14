@@ -143,10 +143,17 @@ body {
 
 .card-footer {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 10px; /* space between buttons */
   margin-top: 20px;
 }
+
+.card-footer .timestamp {
+  margin-left: auto; /* push timestamp to right */
+  font-size: 0.8em;
+  color: gray;
+}
+
 
 .open-btn {
   padding: 8px 14px;
@@ -160,11 +167,6 @@ body {
 
 .open-btn:hover {
   background-color: #2980b9;
-}
-
-.timestamp {
-  font-size: 0.8em;
-  color: #666;
 }
 
 /* Modal Styling */
@@ -305,4 +307,18 @@ body {
 
 .logo-hover-options button:hover {
   background-color: #0056b3;
+}
+
+.delete-btn {
+  padding: 8px 14px;
+  background-color: #e74c3c; /* Red */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.delete-btn:hover {
+  background-color: #c0392b; /* Darker red on hover */
 }
