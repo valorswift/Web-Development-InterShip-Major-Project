@@ -10,45 +10,105 @@ function closeModal() {
   document.getElementById("cardModal").style.display = "none";
 }
 
+// function submitFolder() {
+//   const name = document.getElementById("folderNameInput").value.trim();
+//   const desc = document.getElementById("folderDescInput").value.trim();
+//   if (!name) return;
+
+//   fetch("http://localhost:3000/saveCard", {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json"
+//     },
+//     body: JSON.stringify({
+//       email: localStorage.getItem("email"),
+//       title: name,
+//       description: desc
+//     })
+//   })
+//   .then(res => res.json())
+//   .then(data => {
+//     console.log("Card saved to DB:", data);
+//     if (data.success && data.id) {
+//       // Store card with DB ID
+//       cardsData.push({
+//         id: data.id,  // ✅ store DB ID from backend
+//         name,
+//         desc,
+//         timestamp: Date.now()
+//       });
+//       closeModal();
+//       showHome(); // ✅ only refresh after save succeeds
+//     } else {
+//       alert("Failed to save card: " + (data.message || "Unknown error"));
+//     }
+//   })
+//   .catch(err => {
+//     console.error("Error saving card to DB:", err);
+//   });
+// }
+
+function fetchCards() {
+  const userEmail = localStorage.getItem("email");
+  if (!userEmail) return;
+
+  fetch("http://localhost:3000/getCards?email=" + encodeURIComponent(userEmail))
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        cardsData.length = 0; // clear old data
+        data.cards.forEach(card => {
+          cardsData.push({
+            id: card.id,
+            name: card.title,
+            desc: card.description,
+            timestamp: new Date(card.createdAt).getTime()
+          });
+        });
+        showHome(); // Render cards fresh
+      }
+    })
+    .catch(err => {
+      console.error("Error fetching cards:", err);
+    });
+}
+
 function submitFolder() {
   const name = document.getElementById("folderNameInput").value.trim();
   const desc = document.getElementById("folderDescInput").value.trim();
   if (!name) return;
 
-  const newCard = {
-    name,
-    desc,
-    timestamp: Date.now()
-  };
-
-  cardsData.push(newCard);
-  // Save to database
-fetch("http://localhost:3000/saveCard", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    email: localStorage.getItem("email"), // or however you're storing logged-in user email
-    title: name,
-  description: desc
+  fetch("http://localhost:3000/saveCard", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: localStorage.getItem("email"),
+      title: name,
+      description: desc
+    })
   })
-})
-.then(res => res.json())
-.then(data => {
-  console.log("Card saved to DB:", data);
-})
-.catch(err => {
-  console.error("Error saving card to DB:", err);
-});
-
-  closeModal();
-  showHome(); // ✅ This line displays all cards, including the new one
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      closeModal();
+      fetchCards(); // Fetch fresh cards after save
+    } else {
+      alert("Failed to save card: " + (data.message || "Unknown error"));
+    }
+  })
+  .catch(err => {
+    console.error("Error saving card to DB:", err);
+  });
 }
 
-function openFolder(name, time) {
-  alert(`📂 Folder: ${name}\n🕒 Created on: ${time}`);
+
+
+function openFolder(cardId) {
+  localStorage.setItem('currentCardId', cardId);  // Store the card id
+  window.location.href = '../pages/student_data.html'; // Redirect to student_data.html
 }
+
+
 
 document.getElementById("searchBar").addEventListener("input", function () {
   const query = this.value.toLowerCase().replace(/\s+/g, ' ').trim(); // Normalize spaces
@@ -83,13 +143,41 @@ document.getElementById("cardContainer").style.display = "flex"; // Show main co
 }
 
 
-function showStudent() {
-  const cardContainer = document.getElementById("cardContainer");
-  cardContainer.innerHTML = `<div class="student-counts">
-    <h3>👦 Boys: 0</h3>
-    <h3>👧 Girls: 0</h3>
-  </div>`;
+// function showStudent() {
+//   const cardContainer = document.getElementById("cardContainer");
+//   cardContainer.innerHTML = `<div class="student-counts">
+//     <h3>👦 Boys: 0</h3>
+//     <h3>👧 Girls: 0</h3>
+//   </div>`;
+// }
+
+async function showStudentStats() {
+  console.log("Function is callrd");
+  document.getElementById("studentStats").style.display = "block";
+  document.getElementById("cardContainer").style.display = "none"; // Hide cards
+
+  try {
+    const email = localStorage.getItem("email");
+    // const response = await fetch(`http://localhost:3000/getStudentStats?email=${encodeURIComponent(email)}`);  getAllStudents
+    const response = await fetch(`http://localhost:3000/getAllStudents?email=${encodeURIComponent(email)}`)
+    const data = await response.json();
+
+    if (data.success) {
+      document.getElementById("totalStudents").textContent = data.totalStudents;
+      document.getElementById("totalBoys").textContent = data.totalBoys;
+      document.getElementById("totalGirls").textContent = data.totalGirls;
+      console.log("Student Stats Data:", data);
+
+    } else {
+      alert("Failed to load student stats: " + data.message);
+    }
+  } catch (err) {
+    alert("Error fetching student stats: " + err.message);
+  }
 }
+window.showStudentStats = showStudentStats;
+
+
 
 function showSettings() {
   document.getElementById("studentStats").style.display = "none";
@@ -139,14 +227,15 @@ function addCardToDOM(data) {
       <p>${data.desc || "No description provided."}</p>
     </div>
     <div class="card-footer">
-      <button class="open-btn" onclick="openFolder('${data.name}', '${dateString}')">Open File</button>
+        <button class="open-btn" onclick="openFolder('${data.id}')">Open File</button>
+      <button class="delete-btn" onclick="deleteCard('${data.id}')">Delete</button>
       <span class="timestamp">Created: ${dateString}</span>
     </div>
   `;
 
   container.appendChild(card);
 }
-
+  // <button class="open-btn" onclick="openFolder({data.name}', '{dateString}')">Open File</button>
 function showHome() {
 
   document.getElementById("studentStats").style.display = "none";
@@ -160,36 +249,147 @@ document.getElementById("cardContainer").style.display = "flex"; // Show main co
     .forEach(card => addCardToDOM(card));
 }
 
-function showStudentStats() {
-  document.getElementById("studentStats").style.display = "block";
-  document.getElementById("cardContainer").style.display = "none"; // Hide main content
-}
+// function showStudentStats() {
+//   document.getElementById("studentStats").style.display = "block";
+//   document.getElementById("cardContainer").style.display = "none"; // Hide main content
+// }
 
  function logout() {
     window.location.href = "../pages/signup.html";
   }
 
-window.onload = async function () {
+// window.onload = async function () {
+//   const userEmail = localStorage.getItem("email");
+//   if (!userEmail) return;
+
+//   try {
+//     // const response = await fetch("/getCards?email=" + encodeURIComponent(userEmail)); // 🟢 Note: GET endpoint is /getCards not /get-cards
+//     const response = await fetch("http://localhost:3000/getCards?email=" + encodeURIComponent(userEmail));
+//     const data = await response.json();
+//     if (data.success) {
+//       cardsData.length = 0; // Clear existing cards
+//       data.cards.forEach(card => {
+//            cardsData.push({
+//                  id: card.id, // ✅ store DB ID here
+//                 name: card.title,
+//               desc: card.description,
+//               timestamp: new Date(card.createdAt).getTime()
+//           });
+        
+// });
+//       showHome(); // 🟢 Renders the fetched cards
+//     }
+//   } catch (err) {
+//     console.error("Error fetching cards:", err);
+//   }
+// };
+
+function deleteCard(id) {
+  Swal.fire({
+    title: 'Are you sure?',
+    text: "This folder will be permanently deleted.",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#e74c3c',  // red
+    cancelButtonColor: '#3498db',   // blue
+    confirmButtonText: 'Yes, delete it!'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      fetch(`http://localhost:3000/deleteCard/${id}`, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            Swal.fire(
+              'Deleted!',
+              'The folder has been deleted.',
+              'success'
+            ).then(() => location.reload());
+          } else {
+            Swal.fire('Error', data.message, 'error');
+          }
+        })
+        .catch(err => {
+          Swal.fire('Error', err.message, 'error');
+        });
+    }
+  });
+}
+
+async function goToProfile() {
+  const email = localStorage.getItem("email");
+
+  try {
+    const res = await fetch(`http://localhost:3000/getProfileData?email=${encodeURIComponent(email)}`);
+    const data = await res.json();
+
+    if (!data.success) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Failed to load profile information"
+      });
+      return;
+    }
+
+    Swal.fire({
+      title: "Profile Info",
+      html: `
+        <div style="text-align:center; padding: 10px;">
+          <img src="${data.profileImage || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'}" 
+               style="width:100px; height:100px; border-radius:50%; object-fit:cover; margin-bottom: 15px;">
+          <p><strong>Name:</strong> ${data.fullname || "N/A"}</p>
+          <p><strong>Email:</strong> ${data.email}</p>
+          <p><strong>Active Folders:</strong> ${data.activeCount}</p>
+        </div>
+      `,
+      showConfirmButton: true,
+      confirmButtonText: "Close",
+      confirmButtonColor: "#3498db",
+      width: "350px"
+    });
+
+  } catch (err) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Could not fetch profile data"
+    });
+  }
+}
+
+// window.addEventListener('pageshow', (event) => {
+//   if (event.persisted) {
+//     showHome(); // or your function that fetches & displays cards
+//   }
+// });
+async function fetchAndShowCards() {
   const userEmail = localStorage.getItem("email");
   if (!userEmail) return;
 
   try {
-    // const response = await fetch("/getCards?email=" + encodeURIComponent(userEmail)); // 🟢 Note: GET endpoint is /getCards not /get-cards
     const response = await fetch("http://localhost:3000/getCards?email=" + encodeURIComponent(userEmail));
     const data = await response.json();
     if (data.success) {
       cardsData.length = 0; // Clear existing cards
       data.cards.forEach(card => {
         cardsData.push({
+          id: card.id,
           name: card.title,
           desc: card.description,
           timestamp: new Date(card.createdAt).getTime()
         });
       });
-      showHome(); // 🟢 Renders the fetched cards
+      showHome();
     }
   } catch (err) {
     console.error("Error fetching cards:", err);
   }
-};
+}
 
+window.onload = fetchAndShowCards;
+
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    fetchAndShowCards();
+  }
+});
