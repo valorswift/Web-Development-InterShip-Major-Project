@@ -1,1 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Management</title>
+  <link rel="stylesheet" href="../assets/style/student_data.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="page-header">
+    <h1>Student Management</h1>
+    <div class="header-right">
+      <input type="text" id="searchInput" placeholder="Search by name...">
+      <button onclick="openAddStudentForm()" class="add-btn">+ Add Student</button>
+      <button onclick="goBack()" class="back-btn">⬅ Back</button>
+    </div>
+  </div>
+
+  <!-- Student Table -->
+  <table id="studentTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Roll No</th>
+        <th>Gender</th>
+        <th>Gmail</th>
+        <th>Address</th>
+        <th>Date of Birth</th>
+        <th>Age</th>
+        <th>Phone</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Rows added dynamically via JS -->
+    </tbody>
+  </table>
+
+  <!-- Modal -->
+  <div id="studentModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Add Student</h2>
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+      </div>
+
+      <form id="studentForm" class="modal-form">
+  <input type="hidden" id="editIndex">
+  
+  <div class="form-group">
+    <label>Name</label>
+    <input type="text" id="studentName" required>
+  </div>
+  <div class="form-group">
+    <label>Roll No</label>
+    <input type="number" id="studentRoll" required>
+  </div>
+  <label for="studentGender">Gender:</label>
+    <select id="studentGender" name="gender">
+  <option value="">Select gender</option>
+  <option value="Male">Male</option>
+  <option value="Female">Female</option>
+  <option value="Other">Other</option>
+</select>
+
+  <div class="form-group">
+    <label>Gmail</label>
+    <input type="email" id="studentGmail" required>
+  </div>
+  <div class="form-group">
+    <label>Address</label>
+    <input type="text" id="studentAddress" required>
+  </div>
+  <div class="form-group">
+    <label>Date of Birth</label>
+    <input type="date" id="studentDom" required>
+  </div>
+  <div class="form-group">
+    <label>Age</label>
+    <input type="number" id="studentAge" required>
+  </div>
+  <div class="form-group">
+    <label>Phone</label>
+    <input type="tel" id="studentPhone" required>
+  </div>
+
+  <div class="modal-actions">
+    <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
+    <button type="submit" class="save-btn">Save</button>
+  </div>
+</form>
+
+    </div>
+  </div>
+
+  <script src="../assets/script/student_data.js"></script>
+</body>
+</html>
 
