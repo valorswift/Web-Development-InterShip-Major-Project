@@ -13,10 +13,16 @@
       <button onclick="goBack()" class="back-btn">⬅ Back</button>
       <h1>Student Management</h1>
     </div>
-    <div class="header-right">
+    <!-- <div class="header-right">
       <input type="text" id="searchInput" placeholder="Search by name...">
       <button onclick="openAddStudentForm()" class="add-btn">+ Add Student</button>
-    </div>
+    </div> -->
+  <div class="header-right">
+    <input type="text" id="searchInput" placeholder="Search by name...">
+    <button onclick="goToAttendance()" class="attendance-btn">📋 Attendance</button>
+    <button onclick="openAddStudentForm()" class="add-btn">+ Add Student</button>
+  </div>
+
   </div>
 
   <table id="studentTable">
