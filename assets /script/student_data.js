@@ -3,6 +3,7 @@ let currentCardId = null;
 
 window.onload = async function () {
   currentCardId = localStorage.getItem("currentCardId");
+  console.log(currentCardId);
   if (!currentCardId) {
     alert("No card selected.");
     return;
@@ -175,4 +176,8 @@ document.getElementById("searchInput").addEventListener("input", function () {
 
 function goBack() {
   window.history.back();
+}
+
+function goToAttendance() {
+  window.location.href = "../pages/attendence.html"; // Replace with your actual attendance page URL
 }
