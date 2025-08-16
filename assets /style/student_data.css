@@ -320,3 +320,17 @@ option {
   background-color: #fff; /* Visible background */
   color: #333; /* Visible text */
 }
+
+.attendance-btn {
+  background: #3498db; /* Blue */
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.attendance-btn:hover {
+  background: #2980b9;
+}
