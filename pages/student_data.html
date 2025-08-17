@@ -1,27 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Student Management</title>
   <link rel="stylesheet" href="../assets/style/student_data.css" />
+  <link rel="stylesheet" href="../assets/style/ex.css">
+
 </head>
+
 <body>
 
   <div class="page-header">
-    <div class="header-left">
-      <button onclick="goBack()" class="back-btn">⬅ Back</button>
+    <div class="header-right">
+      <button onclick="goBack()"> ⬅ </button>
       <h1>Student Management</h1>
     </div>
-    <!-- <div class="header-right">
+
+    <div class="header-right">
       <input type="text" id="searchInput" placeholder="Search by name...">
+      <button onclick="goToAttendance()" class="attendance-btn">📋 Attendance</button>
       <button onclick="openAddStudentForm()" class="add-btn">+ Add Student</button>
-    </div> -->
-  <div class="header-right">
-    <input type="text" id="searchInput" placeholder="Search by name...">
-    <button onclick="goToAttendance()" class="attendance-btn">📋 Attendance</button>
-    <button onclick="openAddStudentForm()" class="add-btn">+ Add Student</button>
-  </div>
+    </div>
 
   </div>
 
@@ -52,7 +53,7 @@
 
       <form id="studentForm" class="modal-form">
         <input type="hidden" id="editIndex">
-        
+
         <div class="form-group">
           <label>Name</label>
           <input type="text" id="studentName" required>
@@ -107,4 +108,5 @@
 
   <script src="../assets/script/student_data.js"></script>
 </body>
+
 </html>
