@@ -1,15 +1,33 @@
+// ===================================
+// Global Data Storage
+// ===================================
+
+// Store all folder/card data in memory
 const cardsData = [];
 
+
+// ===================================
+// Modal Handling (Create Folder)
+// ===================================
+
+// Open "Create Folder" modal & reset input fields
 function createCard() {
     document.getElementById("folderNameInput").value = "";
     document.getElementById("folderDescInput").value = "";
     document.getElementById("cardModal").style.display = "flex";
 }
 
+// Close modal
 function closeModal() {
     document.getElementById("cardModal").style.display = "none";
 }
 
+
+// ===================================
+// Fetch and Display Cards
+// ===================================
+
+// Fetch all saved folders/cards for current user
 function fetchCards() {
     const userEmail = localStorage.getItem("email");
     if (!userEmail) return;
@@ -18,7 +36,8 @@ function fetchCards() {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                cardsData.length = 0; // clear old data
+                // Reset old data and update
+                cardsData.length = 0;
                 data.cards.forEach(card => {
                     cardsData.push({
                         id: card.id,
@@ -27,7 +46,7 @@ function fetchCards() {
                         timestamp: new Date(card.createdAt).getTime()
                     });
                 });
-                showHome(); // Render cards fresh
+                showHome(); // Refresh UI
             }
         })
         .catch(err => {
@@ -35,10 +54,11 @@ function fetchCards() {
         });
 }
 
+// Submit new folder to backend
 function submitFolder() {
     const name = document.getElementById("folderNameInput").value.trim();
     const desc = document.getElementById("folderDescInput").value.trim();
-    if (!name) return;
+    if (!name) return; // Folder must have a name
 
     fetch("http://localhost:3000/saveCard", {
         method: "POST",
@@ -53,7 +73,7 @@ function submitFolder() {
         .then(data => {
             if (data.success) {
                 closeModal();
-                fetchCards(); // Fetch fresh cards after save
+                fetchCards(); // Reload all folders
             } else {
                 alert("Failed to save card: " + (data.message || "Unknown error"));
             }
@@ -64,21 +84,30 @@ function submitFolder() {
 }
 
 
+// ===================================
+// Navigation: Open Folder
+// ===================================
 
+// Open folder by saving its ID and redirecting to student_data page
 function openFolder(cardId) {
-    localStorage.setItem('currentCardId', cardId);  // Store the card id
-    window.location.href = '../pages/student_data.html'; // Redirect to student_data.html
+    localStorage.setItem('currentCardId', cardId);
+    window.location.href = '../pages/student_data.html';
 }
 
 
+// ===================================
+// Search Functionality
+// ===================================
 
+// Filter cards dynamically when typing in search bar
 document.getElementById("searchBar").addEventListener("input", function () {
-    const query = this.value.toLowerCase().replace(/\s+/g, ' ').trim(); // Normalize spaces
+    const query = this.value.toLowerCase().replace(/\s+/g, ' ').trim();
     const cards = document.querySelectorAll(".card");
 
     cards.forEach(card => {
         const title = card.querySelector(".card-title").textContent.toLowerCase().replace(/\s+/g, ' ').trim();
-        const description = card.querySelector("p").textContent.toLowerCase().replace(/\s+/g, ' ').trim(); // optional
+        const description = card.querySelector("p").textContent.toLowerCase().replace(/\s+/g, ' ').trim();
+        // Match against title or description
         if (title.includes(query) || description.includes(query)) {
             card.style.display = "block";
         } else {
@@ -87,47 +116,50 @@ document.getElementById("searchBar").addEventListener("input", function () {
     });
 });
 
-window.onload = function () {
-    showHome();
-};
 
+// ===================================
+// View Controls (Recent, Stats, Exams, Home)
+// ===================================
+
+// Show recently created folders
 function showRecent() {
-
     document.getElementById("studentStats").style.display = "none";
-    document.getElementById("cardContainer").style.display = "flex"; // Show main content again
+    document.getElementById("cardContainer").style.display = "flex";
     document.getElementById("examContainer").style.display = "none";
 
     const container = document.getElementById("cardContainer");
     container.innerHTML = "";
 
+    // Sort by latest timestamp
     cardsData
         .sort((a, b) => b.timestamp - a.timestamp)
         .forEach(card => addCardToDOM(card));
 }
 
+// Show student statistics (total, boys, girls)
 async function showStudentStats() {
     console.log("Function is called");
     document.getElementById("studentStats").style.display = "block";
-    document.getElementById("cardContainer").style.display = "none"; // Hide cards
+    document.getElementById("cardContainer").style.display = "none";
     document.getElementById("examContainer").style.display = "none";
 
     try {
         const email = localStorage.getItem("email");
-        // const response = await fetch(`http://localhost:3000/getStudentStats?email=${encodeURIComponent(email)}`);  getAllStudents
-        const response = await fetch(`http://localhost:3000/getAllStudents?email=${encodeURIComponent(email)}`)
+        const response = await fetch(`http://localhost:3000/getAllStudents?email=${encodeURIComponent(email)}`);
         const data = await response.json();
 
         if (data.success) {
-      const students = data.students;
-      const totalStudents = students.length;
-      const totalBoys = students.filter(s => s.gender.toLowerCase() === 'male').length;
-      const totalGirls = students.filter(s => s.gender.toLowerCase() === 'female').length;
+            const students = data.students;
+            const totalStudents = students.length;
+            const totalBoys = students.filter(s => s.gender.toLowerCase() === 'male').length;
+            const totalGirls = students.filter(s => s.gender.toLowerCase() === 'female').length;
 
-      document.getElementById("totalStudents").textContent = totalStudents;
-      document.getElementById("totalBoys").textContent = totalBoys;
-      document.getElementById("totalGirls").textContent = totalGirls;
+            // Update stats UI
+            document.getElementById("totalStudents").textContent = totalStudents;
+            document.getElementById("totalBoys").textContent = totalBoys;
+            document.getElementById("totalGirls").textContent = totalGirls;
 
-      console.log("Student Stats Data:", { totalStudents, totalBoys, totalGirls });
+            console.log("Student Stats Data:", { totalStudents, totalBoys, totalGirls });
         } else {
             alert("Failed to load student stats: " + data.message);
         }
@@ -137,54 +169,21 @@ async function showStudentStats() {
 }
 window.showStudentStats = showStudentStats;
 
-
-
-// function showSettings() {
-//     document.getElementById("studentStats").style.display = "none";
-//     const cardContainer = document.getElementById("cardContainer");
-//     document.getElementById("examContainer").style.display = "none";
-//     cardContainer.style.display = "flex";
-//     cardContainer.innerHTML = `
-//     <h3>Settings</h3>
-//     <label>Change Background Color:
-//       <input type="color" id="bgColorPicker" />
-//     </label>
-//     <br>
-//     <label>
-//       <input type="checkbox" id="darkModeToggle" /> Enable Dark Mode
-//     </label>
-//   `;
-
-//     const bgColorPicker = document.getElementById("bgColorPicker");
-//     const darkModeToggle = document.getElementById("darkModeToggle");
-
-//     bgColorPicker.addEventListener("input", (e) => {
-//         document.body.style.backgroundColor = e.target.value;
-//     });
-
-//     darkModeToggle.addEventListener("change", (e) => {
-//         if (e.target.checked) {
-//             document.body.classList.add("dark-mode");
-//         } else {
-//             document.body.classList.remove("dark-mode");
-//             // Reset to selected background color if any
-//             document.body.style.backgroundColor = bgColorPicker.value || "";
-//         }
-//     });
-// }
-
+// Show exam records section
 function showExamRecords() {
     console.log("Exam details function is called");
-
-    // Hide other sections
     document.getElementById("studentStats").style.display = "none";
     document.getElementById("cardContainer").style.display = "none";
-
-    // Show exam section
     document.getElementById("examContainer").style.display = "block";
 }
 window.showExamRecords = showExamRecords;
 
+
+// ===================================
+// Card Rendering
+// ===================================
+
+// Add a folder card to the DOM
 function addCardToDOM(data) {
     const container = document.getElementById("cardContainer");
 
@@ -200,41 +199,49 @@ function addCardToDOM(data) {
       <p>${data.desc || "No description provided."}</p>
     </div>
     <div class="card-footer">
-        <button class="open-btn" onclick="openFolder('${data.id}')">Open File</button>
-      <button class="delete-btn" onclick="deleteCard('${data.id}')">Delete</button>
-      <span class="timestamp">Created: ${dateString}</span>
+        <button class="open-btn " onclick="openFolder('${data.id}')">Open File</button>
+        <button class="delete-btn " onclick="deleteCard('${data.id}')">Delete</button>
+        <span class="timestamp">Created: ${dateString}</span>
     </div>
   `;
 
     container.appendChild(card);
 }
-// <button class="open-btn" onclick="openFolder({data.name}', '{dateString}')">Open File</button>
-function showHome() {
 
+// Show Home view (all folders sorted alphabetically)
+function showHome() {
     document.getElementById("studentStats").style.display = "none";
-    document.getElementById("cardContainer").style.display = "flex"; // Show main content again
+    document.getElementById("cardContainer").style.display = "flex";
     document.getElementById("examContainer").style.display = "none";
 
     const container = document.getElementById("cardContainer");
     container.innerHTML = "";
 
+    // Sort alphabetically by name
     cardsData
         .sort((a, b) => a.name.localeCompare(b.name))
         .forEach(card => addCardToDOM(card));
 }
 
+
+// ===================================
+// User Actions (Logout, Delete, Profile)
+// ===================================
+
+// Logout user and go back to signup page
 function logout() {
     window.location.href = "../pages/signup.html";
 }
 
+// Delete a folder (with confirmation dialog)
 function deleteCard(id) {
     Swal.fire({
         title: 'Are you sure?',
         text: "This folder will be permanently deleted.",
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#e74c3c',  // red
-        cancelButtonColor: '#3498db',   // blue
+        confirmButtonColor: '#e74c3c',
+        cancelButtonColor: '#3498db',
         confirmButtonText: 'Yes, delete it!'
     }).then((result) => {
         if (result.isConfirmed) {
@@ -246,7 +253,7 @@ function deleteCard(id) {
                             'Deleted!',
                             'The folder has been deleted.',
                             'success'
-                        ).then(() => location.reload());
+                        ).then(() => location.reload()); // Refresh page
                     } else {
                         Swal.fire('Error', data.message, 'error');
                     }
@@ -258,6 +265,7 @@ function deleteCard(id) {
     });
 }
 
+// Fetch and display user profile information
 async function goToProfile() {
     const email = localStorage.getItem("email");
 
@@ -274,6 +282,7 @@ async function goToProfile() {
             return;
         }
 
+        // Display profile data in a styled modal
         Swal.fire({
             title: "Profile Info",
             html: `
@@ -300,6 +309,12 @@ async function goToProfile() {
     }
 }
 
+
+// ===================================
+// Refresh Data on Load
+// ===================================
+
+// Fetch cards when page first loads
 async function fetchAndShowCards() {
     const userEmail = localStorage.getItem("email");
     if (!userEmail) return;
@@ -308,7 +323,7 @@ async function fetchAndShowCards() {
         const response = await fetch("http://localhost:3000/getCards?email=" + encodeURIComponent(userEmail));
         const data = await response.json();
         if (data.success) {
-            cardsData.length = 0; // Clear existing cards
+            cardsData.length = 0;
             data.cards.forEach(card => {
                 cardsData.push({
                     id: card.id,
@@ -323,9 +338,9 @@ async function fetchAndShowCards() {
         console.error("Error fetching cards:", err);
     }
 }
-
 window.onload = fetchAndShowCards;
 
+// Re-fetch cards if page is loaded from cache (back/forward navigation)
 window.addEventListener('pageshow', (event) => {
     if (event.persisted) {
         fetchAndShowCards();
