@@ -1,8 +1,7 @@
 console.log('attendance.js loaded');
 
-const cardId =  localStorage.getItem("currentCardId");; // Replace with selected card ID 
-// currentCardId
-// const currentCardId = localStorage.getItem("currentCardId");
+const cardId = localStorage.getItem("currentCardId");; // Replace with selected card ID 
+
 let students = [];
 
 // Fetch students from backend
@@ -16,35 +15,63 @@ async function fetchStudents() {
     }
 }
 
+// Function to render all students dynamically in the UI
 function renderStudents() {
+    // Get the container where student cards will be displayed
     const studentList = document.getElementById('studentList');
+
+    // Clear existing content and rebuild the list
     studentList.innerHTML = students.map(s => `
-        <div class="attendance-card bg-gray-50 border border-gray-200 rounded-lg p-4" data-name="${s.name.toLowerCase()}">
+         <!-- Student attendance card -->
+        <div class="attendance-card bg-gray-50 border border-gray-200 rounded-lg p-4" 
+             data-name="${s.name.toLowerCase()}">
+             
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                
+                <!-- Student profile section (icon + details) -->
                 <div class="flex items-center space-x-4">
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">${s.name.charAt(0)}</div>
+                    <!-- Circle with first letter of student's name -->
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 
+                                rounded-full flex items-center justify-center 
+                                text-white font-bold text-lg">
+                        ${s.name.charAt(0)}
+                    </div>
+                    
+                    <!-- Student name and roll number -->
                     <div>
                         <h3 class="font-semibold text-gray-800">${s.name}</h3>
                         <p class="text-sm text-gray-600">Roll No: ${s.roll}</p>
                     </div>
                 </div>
+
+                <!-- Attendance buttons -->
                 <div class="flex space-x-2">
+                    <!-- Present button, highlighted if already marked -->
                     <button onclick="markAttendance(${s.id}, 'present')"
-                        class="present-btn text-white px-3 py-1 rounded-lg font-medium hover:opacity-90 ${s.attendance_status === 'present' ? 'ring-2 ring-green-300' : ''}">
+                        class="present-btn text-white px-3 py-1 rounded-lg font-medium hover:opacity-90 
+                        ${s.attendance_status === 'present' ? 'ring-2 ring-green-300' : ''}">
                         ✅ Present
                     </button>
+
+                    <!-- Absent button, highlighted if already marked -->
                     <button onclick="markAttendance(${s.id}, 'absent')"
-                        class="absent-btn text-white px-3 py-1 rounded-lg font-medium hover:opacity-90 ${s.attendance_status === 'absent' ? 'ring-2 ring-red-300' : ''}">
+                        class="absent-btn text-white px-3 py-1 rounded-lg font-medium hover:opacity-90 
+                        ${s.attendance_status === 'absent' ? 'ring-2 ring-red-300' : ''}">
                         ❌ Absent
                     </button>
+
+                    <!-- Late button, highlighted if already marked -->
                     <button onclick="markAttendance(${s.id}, 'late')"
-                        class="late-btn text-white px-3 py-1 rounded-lg font-medium hover:opacity-90 ${s.attendance_status === 'late' ? 'ring-2 ring-yellow-300' : ''}">
+                        class="late-btn text-white px-3 py-1 rounded-lg font-medium hover:opacity-90 
+                        ${s.attendance_status === 'late' ? 'ring-2 ring-yellow-300' : ''}">
                         ⏰ Late
                     </button>
                 </div>
             </div>
         </div>
     `).join('');
+
+    // Update attendance statistics (summary counters, etc.)
     updateStats();
 }
 
@@ -162,7 +189,7 @@ async function saveAttendance() {
     console.log("Final Date Value:", date);
 
     // Make sure cardId exists (from URL or localStorage)
-    const cardId =  localStorage.getItem("currentCardId");; // Replace with selected card ID 
+    const cardId = localStorage.getItem("currentCardId");; // Replace with selected card ID 
     if (!cardId) {
         alert('❌ cardId is missing!');
         return;
