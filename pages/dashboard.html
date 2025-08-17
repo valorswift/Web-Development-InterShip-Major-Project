@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Student Dashboard</title>
     <link rel="stylesheet" href="../assets/style/dashboard.css">
-    <!-- <link rel="stylesheet" href="../assets/style/exam.css"> -->
+    <link rel="stylesheet" href="../assets/style/ex.css">
+
 </head>
 
 <body>
@@ -30,33 +31,25 @@
                     <li onclick="showRecent()">👨‍🎓 Recent</li>
                 </b>
 
-                <!-- <li onclick="showStudent()">📊 Student</li> -->
                 <b>
                     <li onclick="showStudentStats()">📊 Student</li>
                 </b>
                 <b>
                     <li onclick="showExamRecords()">📘 Exam Details</li>
                 </b>
-                <!-- <b>
-                    <li onclick="showSettings()">⚙️ Settings</li>
-                </b> -->
-
             </ul>
         </aside>
 
         <main class="main">
             <div class="top-bar">
                 <input type="text" placeholder="🔍 Search students..." id="searchBar" />
-                <button onclick="createCard()">+ New Student</button>
+                <button onclick="createCard()" class="btn">+ New Student</button>
             </div>
 
             <div class="cards" id="cardContainer">
                 <!-- Student cards will appear here -->
             </div>
-            <!-- <div id="examContainer" style="display: none; padding: 20px;"></div> -->
-
-
-
+   
             <!-- Student show -->
             <div id="studentStats" style="display: none; padding: 20px;">
                 <h2>Student Summary</h2>
@@ -157,8 +150,8 @@
             <input type="text" id="folderNameInput" placeholder="Enter folder name" />
             <textarea id="folderDescInput" placeholder="Enter description" rows="3"></textarea>
             <div class="modal-actions">
-                <button onclick="submitFolder()">Create</button>
-                <button onclick="closeModal()">Cancel</button>
+                <button onclick="submitFolder()" class="btn">Create</button>
+                <button onclick="closeModal()" class="btn">Cancel</button>
             </div>
         </div>
     </div>
@@ -171,4 +164,5 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 </body>
+
 </html>
