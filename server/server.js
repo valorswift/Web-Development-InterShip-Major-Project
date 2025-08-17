@@ -6,24 +6,28 @@ import cors from 'cors';
 const app = express();
 const port = 3000;
 
+// Enable CORS (allow frontend apps to access this API)
 app.use(cors());
+// Parse incoming JSON request bodies
 app.use(bodyParser.json());
 
-oracledb.initOracleClient(); // Only needed if using Oracle Instant Client
+// Initialize Oracle client (needed if using Oracle Instant Client libraries)
+oracledb.initOracleClient();
 
 const dbConfig = {
-  user: 'system',           // change if your DB user is different
-  password: 'parth',        // your Oracle DB password
-  connectString: 'localhost:1521/orclpdb' // your Oracle service name
+  user: 'system',           // Oracle DB username
+  password: 'tejas28',      // Oracle DB password
+  connectString: 'localhost:1521/xepdb1' // Oracle DB service name/connection string
 };
 
+/* ------------------- USER SIGNUP ------------------- */
 app.post('/signup', async (req, res) => {
   const { fullname, email, password } = req.body;
 
   try {
     const conn = await oracledb.getConnection(dbConfig);
 
-    // Create table if not exists
+    // Create "users" table if it doesn't exist
     await conn.execute(`
       BEGIN
         EXECUTE IMMEDIATE '
@@ -36,10 +40,11 @@ app.post('/signup', async (req, res) => {
           )';
       EXCEPTION
         WHEN OTHERS THEN
-          IF SQLCODE != -955 THEN RAISE; END IF;
+          IF SQLCODE != -955 THEN RAISE; END IF; -- Ignore "already exists" error
       END;
     `);
 
+    // Insert new user
     await conn.execute(
       `INSERT INTO users (fullname, email, password) VALUES (:fullname, :email, :password)`,
       { fullname, email, password },
@@ -53,14 +58,14 @@ app.post('/signup', async (req, res) => {
   }
 });
 
-
-// User Login
+/* ------------------- USER LOGIN ------------------- */
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
     const conn = await oracledb.getConnection(dbConfig);
 
+    // Verify user credentials
     const result = await conn.execute(
       `SELECT * FROM users WHERE email = :email AND password = :password`,
       { email, password }
@@ -78,13 +83,14 @@ app.post('/login', async (req, res) => {
   }
 });
 
+/* ------------------- SAVE CARD (folder) ------------------- */
 app.post('/saveCard', async (req, res) => {
   const { email, title, description } = req.body;
 
   try {
     const conn = await oracledb.getConnection(dbConfig);
 
-    // Optional: create table if not exists
+    // Create "student_cards" table if it doesn't exist
     await conn.execute(`
       BEGIN
         EXECUTE IMMEDIATE '
@@ -102,7 +108,7 @@ app.post('/saveCard', async (req, res) => {
       END;
     `);
 
-    // Insert and return ID
+    // Insert new card and return ID
     const result = await conn.execute(
       `INSERT INTO student_cards (email, title, description) 
        VALUES (:email, :title, :description)
@@ -119,30 +125,21 @@ app.post('/saveCard', async (req, res) => {
     const insertedId = result.outBinds.id[0];
 
     await conn.close();
-
-    res.json({
-      success: true,
-      id: insertedId, // ✅ Send back ID
-      message: 'Card saved successfully'
-    });
-
-    console.log("It was success, ID:", insertedId);
+    res.json({ success: true, id: insertedId, message: 'Card saved successfully' });
 
   } catch (err) {
-    
-    console.error("It didn’t succeed:", err);
     res.status(500).json({ success: false, message: 'Error: ' + err.message });
   }
 });
 
-
-
+/* ------------------- GET CARDS ------------------- */
 app.get('/getCards', async (req, res) => {
   const email = req.query.email;
 
   try {
     const conn = await oracledb.getConnection(dbConfig);
 
+    // Fetch all cards for a user
     const result = await conn.execute(
       `SELECT id, title, description, 
               TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') AS created_at 
@@ -153,7 +150,7 @@ app.get('/getCards', async (req, res) => {
     );
 
     const cards = result.rows.map(row => ({
-      id: Number(row[0]),           // ✅ ID
+      id: Number(row[0]),
       title: row[1],
       description: row[2],
       createdAt: row[3]
@@ -166,6 +163,7 @@ app.get('/getCards', async (req, res) => {
   }
 });
 
+/* ------------------- DELETE CARD ------------------- */
 app.delete('/deleteCard/:id', async (req, res) => {
   const cardId = Number(req.params.id);
 
@@ -176,19 +174,10 @@ app.delete('/deleteCard/:id', async (req, res) => {
   try {
     const conn = await oracledb.getConnection(dbConfig);
 
-    await conn.execute(
-  `DELETE FROM attendance WHERE card_id = :cardId`,
-  { cardId }
-);
+    // Delete attendance and students linked to the card before deleting card
+    await conn.execute(`DELETE FROM attendance WHERE card_id = :cardId`, { cardId });
+    await conn.execute(`DELETE FROM students WHERE card_id = :cardId`, { cardId });
 
-
-    // First delete students linked to the card
-    await conn.execute(
-      `DELETE FROM students WHERE card_id = :cardId`,
-      { cardId }
-    );
-
-    // Then delete the card itself
     await conn.execute(
       `DELETE FROM student_cards WHERE id = :cardId`,
       { cardId },
@@ -202,14 +191,14 @@ app.delete('/deleteCard/:id', async (req, res) => {
   }
 });
 
-
+/* ------------------- GET USER PROFILE DATA ------------------- */
 app.get("/getProfileData", async (req, res) => {
   const email = (req.query.email || "").trim().toLowerCase();
 
   try {
     const conn = await oracledb.getConnection(dbConfig);
 
-    // Check user in 'users' table (change table name if different)
+    // Fetch user details
     const userResult = await conn.execute(
       `SELECT fullname, email FROM users WHERE LOWER(email) = :email`,
       { email }
@@ -223,7 +212,7 @@ app.get("/getProfileData", async (req, res) => {
     const fullname = userResult.rows[0][0];
     const userEmail = userResult.rows[0][1];
 
-    // Get active folder count
+    // Count active folders (cards)
     const activeResult = await conn.execute(
       `SELECT COUNT(*) FROM student_cards WHERE LOWER(email) = :email`,
       { email }
@@ -236,7 +225,7 @@ app.get("/getProfileData", async (req, res) => {
       fullname,
       email: userEmail,
       activeCount: activeResult.rows[0][0],
-      profileImage: null // placeholder for profile image
+      profileImage: null // placeholder for future profile image
     });
 
   } catch (err) {
@@ -244,17 +233,16 @@ app.get("/getProfileData", async (req, res) => {
   }
 });
 
-// GET students by cardId
+/* ------------------- STUDENT CRUD ------------------- */
+// Get students of a card
 app.get('/getStudents', async (req, res) => {
   const cardId = req.query.cardId;
-  if (!cardId) {
-    return res.status(400).json({ success: false, message: "cardId is required" });
-  }
+  if (!cardId) return res.status(400).json({ success: false, message: "cardId is required" });
 
   try {
     const conn = await oracledb.getConnection(dbConfig);
 
-    // Create table if not exists (run once, ignore error if already exists)
+    // Ensure students table exists
     await conn.execute(`
       BEGIN
         EXECUTE IMMEDIATE '
@@ -278,31 +266,31 @@ app.get('/getStudents', async (req, res) => {
     `);
 
     const result = await conn.execute(
-      `SELECT id, name, roll, gmail, address, TO_CHAR(dom, 'YYYY-MM-DD') AS dom, age, phone, gender
-      FROM students WHERE card_id = :cardId ORDER BY id`,
+      `SELECT id, name, roll, gmail, address, TO_CHAR(dom, 'YYYY-MM-DD'), age, phone, gender
+       FROM students WHERE card_id = :cardId ORDER BY id`,
       [cardId]
     );
 
     const students = result.rows.map(row => ({
-        id: row[0],
-        name: row[1],
-        roll: row[2],
-        gmail: row[3],
-        address: row[4],
-        dom: row[5],
-        age: row[6],
-        phone: row[7],
-        gender: row[8],  // <-- add this line
-}));
+      id: row[0],
+      name: row[1],
+      roll: row[2],
+      gmail: row[3],
+      address: row[4],
+      dom: row[5],
+      age: row[6],
+      phone: row[7],
+      gender: row[8],
+    }));
 
     await conn.close();
-
     res.json({ success: true, students });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
+// Add student
 app.post('/addStudent', async (req, res) => {
   const { cardId, name, roll, gmail, address, dom, age, phone, gender } = req.body;
 
@@ -313,12 +301,12 @@ app.post('/addStudent', async (req, res) => {
   try {
     const conn = await oracledb.getConnection(dbConfig);
 
+    // Insert student and return ID
     const result = await conn.execute(
       `INSERT INTO students (card_id, name, roll, gmail, address, dom, age, phone, gender)
        VALUES (:cardId, :name, :roll, :gmail, :address, TO_DATE(:dom, 'YYYY-MM-DD'), :age, :phone, :gender)
        RETURNING id INTO :id`,
-      {
-        cardId, name, roll, gmail, address, dom, age, phone, gender,
+      { cardId, name, roll, gmail, address, dom, age, phone, gender,
         id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER }
       },
       { autoCommit: true }
@@ -333,6 +321,7 @@ app.post('/addStudent', async (req, res) => {
   }
 });
 
+// Update student
 app.put('/updateStudent/:id', async (req, res) => {
   const studentId = Number(req.params.id);
   const { cardId, name, roll, gmail, address, dom, age, phone, gender } = req.body;
@@ -367,7 +356,7 @@ app.put('/updateStudent/:id', async (req, res) => {
   }
 });
 
-// DELETE student by id
+// Delete student
 app.delete('/deleteStudent/:id', async (req, res) => {
   const studentId = Number(req.params.id);
   if (isNaN(studentId)) {
@@ -377,11 +366,8 @@ app.delete('/deleteStudent/:id', async (req, res) => {
   try {
     const conn = await oracledb.getConnection(dbConfig);
 
-    await conn.execute(
-  `DELETE FROM attendance WHERE student_id = :studentId`,
-  { studentId }
-  );
-
+    // Delete attendance first to avoid foreign key conflict
+    await conn.execute(`DELETE FROM attendance WHERE student_id = :studentId`, { studentId });
 
     await conn.execute(
       `DELETE FROM students WHERE id = :studentId`,
@@ -396,13 +382,15 @@ app.delete('/deleteStudent/:id', async (req, res) => {
   }
 });
 
+/* ------------------- GET ALL STUDENTS (for a user) ------------------- */
 app.get('/getAllStudents', async (req, res) => {
   const email = req.query.email;
   if (!email) return res.status(400).json({ success: false, message: "Email required" });
 
   try {
     const conn = await oracledb.getConnection(dbConfig);
-    // Join student_cards and students tables to fetch students for user's cards
+
+    // Fetch students belonging to user’s cards
     const result = await conn.execute(`
       SELECT s.id, s.name, s.gender
       FROM students s
@@ -423,17 +411,17 @@ app.get('/getAllStudents', async (req, res) => {
   }
 });
 
-
-// POST save attendance dynamically
+/* ------------------- ATTENDANCE ------------------- */
+// Save attendance
 app.post('/saveAttendance', async (req, res) => {
   const { cardId, date, attendanceData } = req.body;
-  if (!cardId || !date || !attendanceData) 
+  if (!cardId || !date || !attendanceData)
     return res.status(400).json({ success: false, message: "Invalid data" });
 
   try {
     const conn = await oracledb.getConnection(dbConfig);
 
-    // Create attendance table if it doesn't exist
+    // Create attendance table if not exists
     await conn.execute(`
       BEGIN
         EXECUTE IMMEDIATE '
@@ -452,32 +440,28 @@ app.post('/saveAttendance', async (req, res) => {
       END;
     `);
 
+    // Loop through each attendance record
     for (const a of attendanceData) {
-      // Fetch student name from students table
+      // Get student name
       const studentResult = await conn.execute(
         `SELECT name FROM students WHERE id = :id`,
         { id: a.student_id }
       );
 
-      if (studentResult.rows.length === 0) {
-        console.warn(`No student found for ID ${a.student_id}`);
-        continue;
-      }
-
+      if (studentResult.rows.length === 0) continue;
       const studentName = studentResult.rows[0][0];
 
-      // Check if attendance already exists
+      // Check if attendance already exists for this student/date
       const exists = await conn.execute(
-  `SELECT id FROM attendance 
-   WHERE student_id = :student_id 
-     AND card_id = :card_id 
-     AND TRUNC(attendance_date) = TO_DATE(:attDate,'YYYY-MM-DD')`,
-  { student_id: a.student_id, card_id: cardId, attDate: date }
-);
-
+        `SELECT id FROM attendance 
+         WHERE student_id = :student_id 
+           AND card_id = :card_id 
+           AND TRUNC(attendance_date) = TO_DATE(:attDate,'YYYY-MM-DD')`,
+        { student_id: a.student_id, card_id: cardId, attDate: date }
+      );
 
       if (exists.rows.length > 0) {
-        // Update record if found
+        // Update if already exists
         await conn.execute(
           `UPDATE attendance 
            SET status = :status, student_name = :student_name 
@@ -485,29 +469,26 @@ app.post('/saveAttendance', async (req, res) => {
           { status: a.status, student_name: studentName, id: exists.rows[0][0] }
         );
       } else {
-        // Always insert new record for missing IDs
+        // Insert new record
         await conn.execute(
-  `INSERT INTO attendance (student_id, student_name, card_id, status, attendance_date)
-   VALUES (:student_id, :student_name, :card_id, :status, TO_DATE(:attDate,'YYYY-MM-DD'))`,
-  { student_id: a.student_id, student_name: studentName, card_id: cardId, status: a.status, attDate: date }
-);
-
+          `INSERT INTO attendance (student_id, student_name, card_id, status, attendance_date)
+           VALUES (:student_id, :student_name, :card_id, :status, TO_DATE(:attDate,'YYYY-MM-DD'))`,
+          { student_id: a.student_id, student_name: studentName, card_id: cardId, status: a.status, attDate: date }
+        );
       }
     }
 
     await conn.commit();
     await conn.close();
-
     res.json({ success: true, message: "Attendance saved successfully" });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-
+// Get attendance
 app.get("/getAttendance", async (req, res) => {
   const { cardId, date } = req.query;
-
   if (!cardId || !date) {
     return res.status(400).json({ success: false, message: "Missing cardId or date" });
   }
@@ -515,7 +496,6 @@ app.get("/getAttendance", async (req, res) => {
   try {
     const conn = await oracledb.getConnection(dbConfig);
 
-    // Use simple bind variable names
     const result = await conn.execute(
       `SELECT student_id, status 
        FROM attendance 
@@ -524,21 +504,20 @@ app.get("/getAttendance", async (req, res) => {
       { cid: Number(cardId), d: date }
     );
 
-    // Prepare attendance map
+    // Convert rows into a map { studentId: status }
     const attendance = {};
     for (const row of result.rows) {
-      attendance[row[0]] = row[1]; // row[0] = student_id, row[1] = status
+      attendance[row[0]] = row[1];
     }
 
     await conn.close();
-
     res.json({ success: true, attendance });
   } catch (err) {
-    console.error("Error in getAttendance:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
+/* ------------------- START SERVER ------------------- */
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
